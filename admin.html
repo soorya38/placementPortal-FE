@@ -1,0 +1,1285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    :root {
+      --primary-color: #2563eb;
+      --primary-hover: #1d4ed8;
+      --success-color: #22c55e;
+      --success-hover: #16a34a;
+      --error-color: #ef4444;
+      --error-hover: #dc2626;
+      --background: #f8fafc;
+      --card-bg: #ffffff;
+      --text-primary: #1e293b;
+      --text-secondary: #64748b;
+      --border-color: #e2e8f0;
+      --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      padding: 2rem;
+      background: var(--background);
+      color: var(--text-primary);
+      line-height: 1.5;
+    }
+
+    h2 {
+      font-size: 1.875rem;
+      font-weight: 700;
+      margin-bottom: 1.5rem;
+      color: var(--text-primary);
+    }
+
+    .tab {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+    }
+
+    .tab button {
+      padding: 0.75rem 1.25rem;
+      cursor: pointer;
+      border: none;
+      background-color: var(--card-bg);
+      border-radius: 0.375rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      transition: all 0.3s ease;
+      transform: translateY(0);
+    }
+
+    .tab button:hover {
+      background-color: var(--primary-color);
+      color: white;
+      transform: translateY(-2px);
+      box-shadow: var(--shadow);
+    }
+
+    .tab button.active {
+      background-color: var(--primary-color);
+      color: white;
+      box-shadow: var(--shadow);
+    }
+
+    .tab-content {
+      display: none;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: all 0.5s ease;
+    }
+
+    .tab-content.active {
+      display: block;
+      opacity: 1;
+      transform: translateY(0);
+      background: var(--card-bg);
+      padding: 1.5rem;
+      border-radius: 0.5rem;
+      box-shadow: var(--shadow);
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    input, textarea, select, button[type="submit"] {
+      width: 100%;
+      padding: 0.75rem;
+      border: 1px solid var(--border-color);
+      border-radius: 0.375rem;
+      background: #ffffff;
+      font-size: 0.875rem;
+      transition: all 0.2s ease;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+
+    select[multiple] {
+      height: 150px;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 100px;
+    }
+
+    label {
+      font-weight: 500;
+      color: var(--text-primary);
+      margin-bottom: 0.25rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      margin-top: 1.5rem;
+      border-radius: 0.5rem;
+      overflow: hidden;
+    }
+
+    th, td {
+      padding: 1rem;
+      text-align: left;
+      vertical-align: top;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    th {
+      background-color: #f1f5f9;
+      font-weight: 600;
+      color: var(--text-primary);
+      text-transform: uppercase;
+      font-size: 0.75rem;
+      letter-spacing: 0.05em;
+    }
+
+    tr {
+      transition: background-color 0.2s ease;
+    }
+
+    tr:hover {
+      background-color: #f8fafc;
+    }
+
+    .status-message {
+      margin-top: 1rem;
+      font-weight: 500;
+      padding: 0.75rem;
+      border-radius: 0.375rem;
+      animation: slideIn 0.3s ease;
+    }
+
+    .status-success {
+      background-color: #dcfce7;
+      color: var(--success-color);
+    }
+
+    .status-error {
+      background-color: #fee2e2;
+      color: var(--error-color);
+    }
+
+    #refreshCompaniesBtn, #refreshUsersBtn, #refreshApprovalsBtn, #refreshNotificationsBtn, button[type="submit"] {
+      width: auto;
+      padding: 0.75rem 1.5rem;
+      background-color: var(--primary-color);
+      color: white;
+      border: none;
+      border-radius: 0.375rem;
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      transform: translateY(0);
+    }
+
+    #refreshCompaniesBtn:hover, #refreshUsersBtn:hover, #refreshApprovalsBtn:hover, #refreshNotificationsBtn:hover, button[type="submit"]:hover {
+      background-color: var(--primary-hover);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow);
+    }
+
+    #exportCompaniesBtn {
+      width: auto;
+      padding: 0.75rem 1.5rem;
+      background-color: var(--success-color);
+      color: white;
+      border: none;
+      border-radius: 0.375rem;
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      transform: translateY(0);
+    }
+
+    #exportCompaniesBtn:hover {
+      background-color: var(--success-hover);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow);
+    }
+
+    .approve-btn {
+      width: auto;
+      padding: 0.5rem 1rem;
+      background-color: var(--success-color);
+      color: white;
+      border: none;
+      border-radius: 0.375rem;
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      transform: translateY(0);
+    }
+
+    .approve-btn:hover {
+      background-color: var(--success-hover);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow);
+    }
+
+    .loading::before {
+      content: '⏳ ';
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    @media (max-width: 768px) {
+      table {
+        display: block;
+        overflow-x: auto;
+      }
+      th, td {
+        min-width: 120px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h2>Admin Dashboard</h2>
+
+  <div class="tab">
+    <button class="tab-link active" onclick="showTab(event, 'createCompany')">Create Company</button>
+    <button class="tab-link" onclick="showTab(event, 'createUser')">Create User</button>
+    <button class="tab-link" onclick="showTab(event, 'listCompanies')">List Companies</button>
+    <button class="tab-link" onclick="showTab(event, 'listUsers')">List Users</button>
+    <button class="tab-link" onclick="showTab(event, 'listApprovals')">Approvals</button>
+    <button class="tab-link" onclick="showTab(event, 'mapUsers')">Map Users to Companies</button>
+    <button class="tab-link" onclick="showTab(event, 'notifications')">Notifications</button>
+  </div>
+
+  <div id="createCompany" class="tab-content active">
+    <h3>Create Company</h3>
+    <form id="companyForm">
+      <label for="companyName">Company Name</label>
+      <input type="text" id="companyName" placeholder="Enter company name" required />
+      <label for="companyAddress">Company Address</label>
+      <input type="text" id="companyAddress" placeholder="Enter company address" required />
+      <label for="drive">Drive</label>
+      <input type="text" id="drive" placeholder="Enter drive details" required />
+      <label for="typeOfDrive">Type of Drive</label>
+      <input type="text" id="typeOfDrive" placeholder="Enter type of drive" required />
+      <label for="followUp">Follow Up</label>
+      <input type="text" id="followUp" placeholder="Enter follow-up details" required />
+      <label for="contactDetails">Contact Details</label>
+      <input type="text" id="contactDetails" placeholder="Enter contact details" required />
+      <label for="hrDetails">HR Details</label>
+      <input type="text" id="hrDetails" placeholder="Enter HR details" required />
+      <label for="remarks">Remarks</label>
+      <textarea id="remarks" placeholder="Enter remarks" required></textarea>
+      <label>
+        <input type="checkbox" id="isContacted" /> Is Contacted?
+      </label>
+      <button type="submit">Submit</button>
+    </form>
+    <div id="companyStatus" class="status-message"></div>
+  </div>
+
+  <div id="createUser" class="tab-content">
+    <h3>Create User</h3>
+    <form id="userForm">
+      <label for="userName">User Name</label>
+      <input type="text" id="userName" placeholder="Enter user name" required />
+      <label for="userEmail">Email</label>
+      <input type="email" id="userEmail" placeholder="Enter email" required />
+      <label for="userPass">Password</label>
+      <input type="password" id="userPass" placeholder="Enter password" required />
+      <label for="userRole">Role</label>
+      <select id=" continúa en la siguiente páginauserRole" required>
+        <option value="">Select Role</option>
+        <option value="admin">Admin</option>
+        <option value="manager">Manager</option>
+        <option value="user">User</option>
+      </select>
+      <button type="submit">Create User</button>
+    </form>
+    <div id="userStatus" class="status-message"></div>
+  </div>
+
+  <div id="listCompanies" class="tab-content">
+    <h3>List Companies</h3>
+    <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+      <button id="refreshCompaniesBtn" onclick="fetchAndDisplayCompanies()">Refresh List</button>
+      <button id="exportCompaniesBtn" onclick="exportToExcel()">Export to Excel</button>
+    </div>
+    <div id="listStatus" class="status-message"></div>
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Name</th>
+          <th>Address</th>
+          <th>Drive</th>
+          <th>Type</th>
+          <th>Follow Up</th>
+          <th>Contacted</th>
+          <th>Contact Details</th>
+          <th>HR Details</th>
+          <th>Remarks</th>
+        </tr>
+      </thead>
+      <tbody id="companyListBody"></tbody>
+    </table>
+  </div>
+
+  <div id="listUsers" class="tab-content">
+    <h3>List Users</h3>
+    <button id="refreshUsersBtn" onclick="fetchAndDisplayUsers()">Refresh List</button>
+    <div id="userListStatus" class="status-message"></div>
+    <table>
+      <thead>
+        <tr>
+          <th>User ID</th>
+          <th>Username</th>
+          <th>Email</th>
+          <th>Role</th>
+          <th>Created At</th>
+        </tr>
+      </thead>
+      <tbody id="userListBody"></tbody>
+    </table>
+  </div>
+
+  <div id="listApprovals" class="tab-content">
+    <h3>Pending Approvals</h3>
+    <button id="refreshApprovalsBtn" onclick="fetchAndDisplayApprovals()">Refresh List</button>
+    <div id="approvalStatus" class="status-message"></div>
+    <table>
+      <thead>
+        <tr>
+          <th>Company ID</th>
+          <th>Name</th>
+          <th>Address</th>
+          <th>Drive</th>
+          <th>Type</th>
+          <th>Follow Up</th>
+          <th>Contacted</th>
+          <th>Contact Details</th>
+          <th>HR Details</th>
+          <th>Remarks</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody id="approvalListBody"></tbody>
+    </table>
+  </div>
+
+  <div id="mapUsers" class="tab-content">
+    <h3>Map Users to Companies</h3>
+    <form id="mappingForm">
+      <label for="mappingUser">Select User</label>
+      <select id="mappingUser" required>
+        <option value="">Select User</option>
+      </select>
+      <label for="mappingCompanies">Select Companies</label>
+      <select id="mappingCompanies" multiple required>
+        <option value="">Select Companies</option>
+      </select>
+      <button type="submit">Create Mapping</button>
+    </form>
+    <div id="mappingStatus" class="status-message"></div>
+    <h3>Existing Mappings</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Company Name</th>
+          <th>User Name</th>
+        </tr>
+      </thead>
+      <tbody id="mappingListBody"></tbody>
+    </table>
+  </div>
+
+  <div id="notifications" class="tab-content">
+    <h3>Create Notification</h3>
+    <form id="notificationForm">
+      <label for="notificationTitle">Title</label>
+      <input type="text" id="notificationTitle" placeholder="Enter notification title" required />
+      <label for="notificationBody">Body</label>
+      <textarea id="notificationBody" placeholder="Enter notification body" required></textarea>
+      <button type="submit">Create Notification</button>
+    </form>
+    <div id="notificationStatus" class="status-message"></div>
+    <h3>List Notifications</h3>
+    <button id="refreshNotificationsBtn" onclick="fetchAndDisplayNotifications()">Refresh List</button>
+    <table>
+      <thead>
+        <tr>
+          <th>Title</th>
+          <th>Body</th>
+        </tr>
+      </thead>
+      <tbody id="notificationListBody"></tbody>
+    </table>
+  </div>
+
+  <script>
+    function checkToken() {
+      const jwt_token = localStorage.getItem("jwt_token");
+      if (!jwt_token) {
+        alert("Unauthorized: No token found. Please login again.");
+        window.location.href = "index.html";
+        return null;
+      }
+      console.log("Using JWT token:", jwt_token.substring(0, 10) + "...");
+      return jwt_token;
+    }
+
+    function handleApiError(response, responseText, defaultMessage) {
+      let errorMessage = defaultMessage;
+      try {
+        const errorData = JSON.parse(responseText);
+        errorMessage = errorData.message || errorData.error || errorMessage;
+      } catch (parseError) {
+        console.warn("Response was not valid JSON:", parseError);
+      }
+      if (response.status === 401 || response.status === 403) {
+        errorMessage = "Authentication failed: Token may be invalid or expired. Please log in again.";
+        alert(errorMessage);
+        window.location.href = "index.html";
+      }
+      return errorMessage;
+    }
+
+    function showStatus(elementId, message, isError = false) {
+      const statusEl = document.getElementById(elementId);
+      if (statusEl) {
+        statusEl.textContent = message;
+        statusEl.className = `status-message ${isError ? 'status-error' : 'status-success'}`;
+      } else {
+        console.warn(`Status element with ID ${elementId} not found`);
+      }
+    }
+
+    function showTab(event, tabId) {
+      document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+      document.querySelectorAll('.tab-link').forEach(btn => btn.classList.remove('active'));
+      const tabContent = document.getElementById(tabId);
+      if (tabContent) {
+        tabContent.classList.add('active');
+      } else {
+        console.error(`Tab content with ID ${tabId} not found`);
+      }
+      if (event && event.target) {
+        event.target.classList.add('active');
+      } else {
+        const button = document.querySelector(`.tab-link[onclick*="'${tabId}'"]`);
+        if (button) button.classList.add('active');
+      }
+
+      if (tabId === 'listCompanies') {
+        fetchAndDisplayCompanies();
+      } else if (tabId === 'listUsers') {
+        fetchAndDisplayUsers();
+      } else if (tabId === 'listApprovals') {
+        fetchAndDisplayApprovals();
+      } else if (tabId === 'mapUsers') {
+        fetchAndPopulateMappingData();
+      } else if (tabId === 'notifications') {
+        fetchAndDisplayNotifications();
+      }
+    }
+
+    async function fetchAndDisplayCompanies() {
+      const token = checkToken();
+      if (!token) return;
+
+      const listStatus = document.getElementById("listStatus");
+      const tableBody = document.getElementById("companyListBody");
+      if (!listStatus || !tableBody) {
+        console.error("Required DOM elements for companies list not found");
+        return;
+      }
+      listStatus.textContent = "Loading companies...";
+      listStatus.className = 'status-message loading';
+      tableBody.innerHTML = '';
+
+      const apiEndpoint = "http://localhost:8080/v1/data";
+      const requestOptions = {
+        method: "GET",
+        headers: {
+          "Accept": "application/json",
+          "Authorization": `Bearer ${token}`
+        }
+      };
+
+      try {
+        const response = await fetch(apiEndpoint, requestOptions);
+        const responseText = await response.text();
+
+        if (!response.ok) {
+          const errorMessage = handleApiError(response, responseText, `Failed to fetch companies. Status: ${response.status}`);
+          throw new Error(errorMessage);
+        }
+
+        let data;
+        try {
+          data = JSON.parse(responseText);
+        } catch (parseError) {
+          throw new Error("Failed to parse JSON response from server");
+        }
+
+        if (!data || !Array.isArray(data.companies)) {
+          throw new Error("Invalid data format received from server. Expected { companies: [...] }");
+        }
+
+        if (data.companies.length === 0) {
+          listStatus.textContent = "No companies found.";
+          listStatus.className = 'status-message';
+          return;
+        }
+
+        data.companies.forEach(company => {
+          const row = tableBody.insertRow();
+          row.insertCell().textContent = company.CompanyID ?? 'N/A';
+          row.insertCell().textContent = company.CompanyName ?? 'N/A';
+          row.insertCell().textContent = company.CompanyAddress ?? 'N/A';
+          row.insertCell().textContent = company.Drive ?? 'N/A';
+          row.insertCell().textContent = company.TypeOfDrive ?? 'N/A';
+          row.insertCell().textContent = company.FollowUp ?? 'N/A';
+          row.insertCell().textContent = typeof company.IsContacted === 'boolean' ? (company.IsContacted ? 'Yes' : 'No') : 'N/A';
+          row.insertCell().textContent = company.ContactDetails ?? 'N/A';
+          row.insertCell().textContent = company.HRDetails ?? 'N/A';
+          row.insertCell().textContent = company.Remarks ?? 'N/A';
+        });
+
+        showStatus("listStatus", `Loaded ${data.companies.length} companies.`);
+
+      } catch (error) {
+        console.error("Error in fetchAndDisplayCompanies:", error);
+        showStatus("listStatus", `Error: ${error.message}`, true);
+      }
+    }
+
+    async function fetchAndDisplayUsers() {
+      const token = checkToken();
+      if (!token) return;
+
+      const listStatus = document.getElementById("userListStatus");
+      const tableBody = document.getElementById("userListBody");
+      if (!listStatus || !tableBody) {
+        console.error("Required DOM elements for users list not found");
+        return;
+      }
+      listStatus.textContent = "Loading users...";
+      listStatus.className = 'status-message loading';
+      tableBody.innerHTML = '';
+
+      const apiEndpoint = "http://localhost:8080/v1/user/list";
+      const requestOptions = {
+        method: "GET",
+        headers: {
+          "Accept": "application/json",
+          "Authorization": `Bearer ${token}`
+        }
+      };
+
+      try {
+        const response = await fetch(apiEndpoint, requestOptions);
+        const responseText = await response.text();
+
+        if (!response.ok) {
+          const errorMessage = handleApiError(response, responseText, `Failed to fetch users. Status: ${response.status}`);
+          throw new Error(errorMessage);
+        }
+
+        let data;
+        try {
+          data = JSON.parse(responseText);
+        } catch (parseError) {
+          throw new Error("Failed to parse JSON response from server");
+        }
+
+        if (!data || !Array.isArray(data.users)) {
+          throw new Error("Invalid data format received from server. Expected { users: [...] }");
+        }
+
+        if (data.users.length === 0) {
+          listStatus.textContent = "No users found.";
+          listStatus.className = 'status-message';
+          return;
+        }
+
+        data.users.forEach(user => {
+          const row = tableBody.insertRow();
+          row.insertCell().textContent = user.UserID ?? 'N/A';
+          row.insertCell().textContent = user.UserName ?? 'N/A';
+          row.insertCell().textContent = user.Email ?? 'N/A';
+          row.insertCell().textContent = user.Role ?? 'N/A';
+          row.insertCell().textContent = user.CreatedAt ? new Date(user.CreatedAt).toLocaleString() : 'N/A';
+        });
+
+        showStatus("userListStatus", `Loaded ${data.users.length} users.`);
+
+      } catch (error) {
+        console.error("Error in fetchAndDisplayUsers:", error);
+        showStatus("userListStatus", `Error: ${error.message}`, true);
+      }
+    }
+
+    async function approveCompany(companyId) {
+      const token = checkToken();
+      if (!token) return;
+
+      const apiEndpoint = `http://localhost:8080/v1/data/approve/id/${companyId}`;
+      const payload = {
+        jwt_token: token,
+        id: companyId,
+        isApproved: true
+      };
+      const requestOptions = {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
+      };
+
+      try {
+        const response = await fetch(apiEndpoint, requestOptions);
+        const responseText = await response.text();
+
+        if (!response.ok) {
+          const errorMessage = handleApiError(response, responseText, `Failed to approve company ${companyId}. Status: ${response.status}`);
+          throw new Error(errorMessage);
+        }
+
+        showStatus("approvalStatus", `Company ${companyId} approved successfully!`);
+        fetchAndDisplayApprovals();
+
+      } catch (error) {
+        console.error("Error in approveCompany:", error);
+        showStatus("approvalStatus", `Error: ${error.message}`, true);
+      }
+    }
+
+    async function fetchAndDisplayApprovals() {
+      const token = checkToken();
+      if (!token) return;
+
+      const listStatus = document.getElementById("approvalStatus");
+      const tableBody = document.getElementById("approvalListBody");
+      if (!listStatus || !tableBody) {
+        console.error("Required DOM elements for approvals list not found");
+        return;
+      }
+      listStatus.textContent = "Loading pending approvals...";
+      listStatus.className = 'status-message loading';
+      tableBody.innerHTML = '';
+
+      const apiEndpoint = "http://localhost:8080/v1/data/approve";
+      const payload = { jwt_token: token };
+      const requestOptions = {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
+      };
+
+      try {
+        const response = await fetch(apiEndpoint, requestOptions);
+        const responseText = await response.text();
+
+        if (!response.ok) {
+          const errorMessage = handleApiError(response, responseText, `Failed to fetch approvals. Status: ${response.status}`);
+          throw new Error(errorMessage);
+        }
+
+        let data;
+        try {
+          data = JSON.parse(responseText);
+        } catch (parseError) {
+          console.error("Failed to parse JSON response:", parseError);
+          throw new Error("Failed to parse JSON response from server");
+        }
+
+        if (!data || typeof data !== 'object') {
+          throw new Error("Invalid data format received from server. Expected an object");
+        }
+
+        const companies = Array.isArray(data.companies) ? data.companies : [];
+        const count = data.count !== undefined ? Number(data.count) : companies.length;
+
+        if (count === 0) {
+          listStatus.textContent = "No pending approvals found.";
+          listStatus.className = 'status-message';
+          tableBody.innerHTML = '<tr><td colspan="11">No pending approvals available.</td></tr>';
+          return;
+        }
+
+        companies.forEach((company, index) => {
+          if (!company || typeof company !== 'object') {
+            console.warn(`Invalid company data at index ${index}`);
+            return;
+          }
+          const row = tableBody.insertRow();
+          row.insertCell().textContent = company.CompanyID ?? 'N/A';
+          row.insertCell().textContent = company.CompanyName ?? 'N/A';
+          row.insertCell().textContent = company.CompanyAddress ?? 'N/A';
+          row.insertCell().textContent = company.Drive ?? 'N/A';
+          row.insertCell().textContent = company.TypeOfDrive ?? 'N/A';
+          row.insertCell().textContent = company.FollowUp ?? 'N/A';
+          row.insertCell().textContent = typeof company.IsContacted === 'boolean' ? (company.IsContacted ? 'Yes' : 'No') : 'N/A';
+          row.insertCell().textContent = company.ContactDetails ?? 'N/A';
+          row.insertCell().textContent = company.HRDetails ?? 'N/A';
+          row.insertCell().textContent = company.Remarks ?? 'N/A';
+          const actionCell = row.insertCell();
+          const approveButton = document.createElement('button');
+          approveButton.textContent = 'Approve';
+          approveButton.className = 'approve-btn';
+          approveButton.onclick = () => approveCompany(company.CompanyID);
+          actionCell.appendChild(approveButton);
+        });
+
+        showStatus("approvalStatus", `Loaded ${count} pending approvals.`);
+
+      } catch (error) {
+        console.error("Error in fetchAndDisplayApprovals:", error);
+        showStatus("approvalStatus", `Error: ${error.message}`, true);
+        tableBody.innerHTML = '<tr><td colspan="11">Failed to load approvals. Please try again or log in again.</td></tr>';
+      }
+    }
+
+    async function fetchAndPopulateMappingData() {
+      const token = checkToken();
+      if (!token) return;
+
+      const userSelect = document.getElementById("mappingUser");
+      const companySelect = document.getElementById("mappingCompanies");
+      const mappingStatus = document.getElementById("mappingStatus");
+      if (!userSelect || !companySelect || !mappingStatus) {
+        console.error("Required DOM elements for mapping not found");
+        return;
+      }
+
+      mappingStatus.textContent = "Loading users, companies, and mappings...";
+      mappingStatus.className = 'status-message loading';
+
+      userSelect.innerHTML = '<option value="">Select User</option>';
+      companySelect.innerHTML = '<option value="">Select Companies</option>';
+
+      try {
+        const userResponse = await fetch("http://localhost:8080/v1/user/list", {
+          method: "GET",
+          headers: {
+            "Accept": "application/json",
+            "Authorization": `Bearer ${token}`
+          }
+        });
+        const userText = await userResponse.text();
+
+        if (!userResponse.ok) {
+          const errorMessage = handleApiError(userResponse, userText, `Failed to fetch users. Status: ${userResponse.status}`);
+          throw new Error(errorMessage);
+        }
+
+        let userData;
+        try {
+          userData = JSON.parse(userText);
+        } catch (parseError) {
+          throw new Error("Failed to parse user response as JSON");
+        }
+
+        if (!userData || !Array.isArray(userData.users)) {
+          throw new Error("Invalid user data format. Expected { users: [...] }");
+        }
+
+        const companyResponse = await fetch("http://localhost:8080/v1/data", {
+          method: "GET",
+          headers: {
+            "Accept": "application/json",
+            "Authorization": `Bearer ${token}`
+          }
+        });
+        const companyText = await companyResponse.text();
+
+        if (!companyResponse.ok) {
+          const errorMessage = handleApiError(companyResponse, companyText, `Failed to fetch companies. Status: ${companyResponse.status}`);
+          throw new Error(errorMessage);
+        }
+
+        let companyData;
+        try {
+          companyData = JSON.parse(companyText);
+        } catch (parseError) {
+          throw new Error("Failed to parse company response as JSON");
+        }
+
+        if (!companyData || !Array.isArray(companyData.companies)) {
+          throw new Error("Invalid company data format. Expected { companies: [...] }");
+        }
+
+        if (userData.users.length === 0) {
+          userSelect.innerHTML = '<option value="">No users available</option>';
+        } else {
+          userData.users.forEach(user => {
+            const option = document.createElement('option');
+            option.value = user.UserID;
+            option.textContent = `${user.UserName} (${user.Email})`;
+            userSelect.appendChild(option);
+          });
+        }
+
+        if (companyData.companies.length === 0) {
+          companySelect.innerHTML = '<option value="">No companies available</option>';
+        } else {
+          companyData.companies.forEach(company => {
+            const option = document.createElement('option');
+            option.value = company.CompanyID;
+            option.textContent = company.CompanyName;
+            companySelect.appendChild(option);
+          });
+        }
+
+        await fetchAndDisplayMappings(userData.users, companyData.companies);
+
+        showStatus("mappingStatus", "Loaded users, companies, and mappings.");
+
+      } catch (error) {
+        console.error("Error in fetchAndPopulateMappingData:", error);
+        showStatus("mappingStatus", `Error: ${error.message}`, true);
+      }
+    }
+
+    async function fetchAndDisplayMappings(users = [], companies = []) {
+      const token = checkToken();
+      if (!token) return;
+
+      const tableBody = document.getElementById("mappingListBody");
+      if (!tableBody) {
+        console.error("Required DOM element for mapping list not found");
+        return;
+      }
+      tableBody.innerHTML = '';
+
+      try {
+        const response = await fetch("http://localhost:8080/v1/data/mapping/list", {
+          method: "GET",
+          headers: {
+            "Accept": "application/json",
+            "Authorization": `Bearer ${token}`
+          }
+        });
+        const responseText = await response.text();
+
+        if (!response.ok) {
+          const errorMessage = handleApiError(response, responseText, `Failed to fetch mappings. Status: ${response.status}`);
+          throw new Error(errorMessage);
+        }
+
+        let data;
+        try {
+          data = JSON.parse(responseText);
+        } catch (parseError) {
+          throw new Error("Failed to parse mappings response as JSON");
+        }
+
+        if (!data || !Array.isArray(data.mapping)) {
+          throw new Error("Invalid mappings data format. Expected { mapping: [...] }");
+        }
+
+        if (data.mapping.length === 0) {
+          const row = tableBody.insertRow();
+          const cell = row.insertCell();
+          cell.colSpan = 2;
+          cell.textContent = "No mappings found.";
+          return;
+        }
+
+        const userMap = users.reduce((map, user) => {
+          map[user.UserID] = user.UserName;
+          return map;
+        }, {});
+        const companyMap = companies.reduce((map, company) => {
+          map[company.CompanyID] = company.CompanyName;
+          return map;
+        }, {});
+
+        data.mapping.forEach(mapping => {
+          const row = tableBody.insertRow();
+          const companyName = companyMap[mapping.CompanyID] || mapping.CompanyID || 'N/A';
+          const userName = userMap[mapping.AccountID] || mapping.AccountID || 'N/A';
+          row.insertCell().textContent = companyName;
+          row.insertCell().textContent = userName;
+        });
+
+      } catch (error) {
+        console.error("Error in fetchAndDisplayMappings:", error);
+        showStatus("mappingStatus", `Error: ${error.message}`, true);
+      }
+    }
+
+    async function createUserCompanyMapping(e) {
+      e.preventDefault();
+      const token = checkToken();
+      if (!token) return;
+
+      const userSelect = document.getElementById("mappingUser");
+      const companySelect = document.getElementById("mappingCompanies");
+      if (!userSelect || !companySelect) {
+        console.error("Required DOM elements for mapping form not found");
+        return;
+      }
+
+      const userId = userSelect.value;
+      const companyIds = Array.from(companySelect.selectedOptions).map(option => option.value);
+
+      if (!userId || companyIds.length === 0) {
+        showStatus("mappingStatus", "Please select a user and at least one company.", true);
+        return;
+      }
+
+      const payload = {
+        jwt_token: token,
+        companyID: companyIds,
+        accountID: userId
+      };
+
+      try {
+        const response = await fetch("http://localhost:8080/v1/data/mapping", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            "Authorization": `Bearer ${token}`
+          },
+          body: JSON.stringify(payload)
+        });
+        const responseText = await response.text();
+
+        if (!response.ok) {
+          const errorMessage = handleApiError(response, responseText, `Failed to create mapping. Status: ${response.status}`);
+          throw new Error(errorMessage);
+        }
+
+        showStatus("mappingStatus", "Mapping created successfully!");
+        document.getElementById("mappingForm").reset();
+
+        const userResponse = await fetch("http://localhost:8080/v1/user/list", {
+          method: "GET",
+          headers: {
+            "Accept": "application/json",
+            "Authorization": `Bearer ${token}`
+          }
+        });
+        const userData = await userResponse.json();
+        const companyResponse = await fetch("http://localhost:8080/v1/data", {
+          method: "GET",
+          headers: {
+            "Accept": "application/json",
+            "Authorization": `Bearer ${token}`
+          }
+        });
+        const companyData = await companyResponse.json();
+
+        await fetchAndDisplayMappings(userData.users || [], companyData.companies || []);
+
+      } catch (error) {
+        console.error("Error in createUserCompanyMapping:", error);
+        showStatus("mappingStatus", `Error: ${error.message}`, true);
+      }
+    }
+
+    function exportToExcel() {
+      const tableBody = document.getElementById("companyListBody");
+      if (!tableBody) {
+        showStatus("listStatus", "Error: Company table not found.", true);
+        return;
+      }
+
+      const rows = tableBody.getElementsByTagName("tr");
+      if (rows.length === 0) {
+        showStatus("listStatus", "No company data to export.", true);
+        return;
+      }
+
+      // Prepare data for Excel
+      const data = [
+        ["ID", "Name", "Address", "Drive", "Type", "Follow Up", "Contacted", "Contact Details", "HR Details", "Remarks"]
+      ];
+
+      Array.from(rows).forEach(row => {
+        const cells = row.getElementsByTagName("td");
+        const rowData = Array.from(cells).map(cell => cell.textContent);
+        data.push(rowData);
+      });
+
+      // Create a new workbook and worksheet
+      const worksheet = XLSX.utils.aoa_to_sheet(data);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Companies");
+
+      // Export to Excel
+      XLSX.writeFile(workbook, "Companies_List.xlsx");
+
+      showStatus("listStatus", "Exported companies to Excel successfully!");
+    }
+
+    async function createNotification(e) {
+      e.preventDefault();
+      const token = checkToken();
+      if (!token) return;
+
+      const title = document.getElementById("notificationTitle").value.trim();
+      const body = document.getElementById("notificationBody").value.trim();
+
+      if (!title || !body) {
+        showStatus("notificationStatus", "Both title and body are required.", true);
+        return;
+      }
+
+      const payload = {
+        jwt_token: token,
+        title,
+        body
+      };
+
+      try {
+        const response = await fetch("http://localhost:8080/v1/notif", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            "Authorization": `Bearer ${token}`
+          },
+          body: JSON.stringify(payload)
+        });
+        const responseText = await response.text();
+
+        if (!response.ok) {
+          const errorMessage = handleApiError(response, responseText, `Failed to create notification. Status: ${response.status}`);
+          throw new Error(errorMessage);
+        }
+
+        showStatus("notificationStatus", "Notification created successfully!");
+        document.getElementById("notificationForm").reset();
+        fetchAndDisplayNotifications();
+
+      } catch (error) {
+        console.error("Error in createNotification:", error);
+        showStatus("notificationStatus", `Error: ${error.message}`, true);
+      }
+    }
+
+    async function fetchAndDisplayNotifications() {
+  const token = checkToken();
+  if (!token) return;
+
+  const listStatus = document.getElementById("notificationStatus");
+  const tableBody = document.getElementById("notificationListBody");
+  if (!listStatus || !tableBody) {
+    console.error("Required DOM elements for notifications list not found");
+    return;
+  }
+
+  listStatus.textContent = "Loading notifications...";
+  listStatus.className = 'status-message loading';
+  tableBody.innerHTML = '';
+
+  const apiEndpoint = "http://localhost:8080/v1/notif";
+  const requestOptions = {
+    method: "GET",
+    headers: {
+      "Accept": "application/json",
+      "Authorization": `Bearer ${token}`
+    }
+  };
+
+  try {
+    const response = await fetch(apiEndpoint, requestOptions);
+    const responseText = await response.text();
+
+    if (!response.ok) {
+      const errorMessage = handleApiError(response, responseText, `Failed to fetch notifications. Status: ${response.status}`);
+      throw new Error(errorMessage);
+    }
+
+    let data;
+    try {
+      data = JSON.parse(responseText);
+    } catch (parseError) {
+      throw new Error("Failed to parse JSON response from server");
+    }
+
+    const notifs = Array.isArray(data?.notifs) ? data.notifs : [];
+
+    if (notifs.length === 0) {
+      listStatus.textContent = "No notifications found.";
+      listStatus.className = 'status-message';
+      tableBody.innerHTML = '<tr><td colspan="2">No notifications available.</td></tr>';
+      return;
+    }
+
+    notifs.forEach(notification => {
+      const row = tableBody.insertRow();
+      row.insertCell().textContent = notification.Title ?? 'N/A';
+      row.insertCell().textContent = notification.Body ?? 'N/A';
+    });
+
+    showStatus("notificationStatus", `Loaded ${notifs.length} notifications.`);
+  } catch (error) {
+    console.error("Error in fetchAndDisplayNotifications:", error);
+    showStatus("notificationStatus", `Error: ${error.message}`, true);
+    tableBody.innerHTML = '<tr><td colspan="2">Failed to load notifications. Please try again or log in again.</td></tr>';
+  }
+}
+
+
+    document.getElementById("companyForm").addEventListener("submit", async function (e) {
+      e.preventDefault();
+      const token = checkToken();
+      if (!token) return;
+
+      const companyName = document.getElementById("companyName").value.trim();
+      const companyAddress = document.getElementById("companyAddress").value.trim();
+      const drive = document.getElementById("drive").value.trim();
+      const typeOfDrive = document.getElementById("typeOfDrive").value.trim();
+      const followUp = document.getElementById("followUp").value.trim();
+      const contactDetails = document.getElementById("contactDetails").value.trim();
+      const hrDetails = document.getElementById("hrDetails").value.trim();
+      const remarks = document.getElementById("remarks").value.trim();
+
+      if (!companyName || !companyAddress || !drive || !typeOfDrive || !followUp || !contactDetails || !hrDetails) {
+        showStatus("companyStatus", "All fields are required.", true);
+        return;
+      }
+
+      const payload = {
+        jwt_token: token,
+        companyName,
+        companyAddress,
+        drive,
+        typeOfDrive,
+        followUp,
+        isContacted: document.getElementById("isContacted").checked,
+        remarks,
+        contactDetails,
+        hrDetails
+      };
+
+      try {
+        const response = await fetch("http://localhost:8080/v1/data", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            "Authorization": `Bearer ${token}`
+          },
+          body: JSON.stringify(payload)
+        });
+        const responseText = await response.text();
+
+        if (!response.ok) {
+          const errorMessage = handleApiError(response, responseText, `Failed to create company. Status: ${response.status}`);
+          throw new Error(errorMessage);
+        }
+
+        showStatus("companyStatus", "Company created successfully!");
+        document.getElementById("companyForm").reset();
+
+      } catch (error) {
+        console.error("Error in createCompany:", error);
+        showStatus("companyStatus", `Error: ${error.message}`, true);
+      }
+    });
+
+    document.getElementById("userForm").addEventListener("submit", async function (e) {
+      e.preventDefault();
+      const token = checkToken();
+      if (!token) return;
+
+      const userName = document.getElementById("userName").value.trim();
+      const email = document.getElementById("userEmail").value.trim();
+      const pass = document.getElementById("userPass").value.trim();
+      const role = document.getElementById("userRole").value;
+
+      if (!userName || !email || !pass || !role) {
+        showStatus("userStatus", "All fields are required.", true);
+        return;
+      }
+
+      const payload = {
+        jwt_token: token,
+        user_name: userName,
+        email: email,
+        pass,
+        role
+      };
+
+      try {
+        const response = await fetch("http://localhost:8080/v1/user", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            "Authorization": `Bearer ${token}`
+          },
+          body: JSON.stringify(payload)
+        });
+        const responseText = await response.text();
+
+        if (!response.ok) {
+          const errorMessage = handleApiError(response, responseText, `Failed to create user. Status: ${response.status}`);
+          throw new Error(errorMessage);
+        }
+
+        showStatus("userStatus", "User created successfully!");
+        document.getElementById("userForm").reset();
+
+      } catch (error) {
+        console.error("Error in createUser:", error);
+        showStatus("userStatus", `Error: ${error.message}`, true);
+      }
+    });
+
+    document.getElementById("mappingForm").addEventListener("submit", createUserCompanyMapping);
+    document.getElementById("notificationForm").addEventListener("submit", createNotification);
+
+    document.addEventListener('DOMContentLoaded', () => {
+      showTab(null, 'createCompany');
+    });
+  </script>
+</body>
+</html>
